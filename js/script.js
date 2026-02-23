@@ -81,7 +81,7 @@ $(document).on('click', function(){
 });
 
 // Set the date we're counting down to
-var countDownDate = new Date("OCT 19, 2025 03:30:00").getTime();
+var countDownDate = new Date("APR 19, 2026 05:30:00").getTime();
 
 // Update the count down every 1 second
 var x = setInterval(function() {
@@ -141,49 +141,65 @@ var styles2 = [
 ].join(';');
 
 
-const overlay = document.getElementById('overlay');
-const closeOverlayBtn = document.querySelector('.close-overlay');
+// ─── Unified Overlay Logic ────────────────────────────────────────────────────
+// Root cause of Android scroll bug:
+//   • document.body.style.overflow = 'hidden'  was set globally on page load
+//   • One click handler reset document.body.style.overflow = 'auto'
+//   • But the IIFE only cleared document.documentElement.style.overflow
+//   • Android Chrome enforces body overflow strictly; iOS Safari is more lenient
+// Fix: lock/unlock scroll ONLY on <html> (documentElement) in one unified place.
+// ─────────────────────────────────────────────────────────────────────────────
 
-// Show the overlay when the page loads
-window.addEventListener('load', () => {
-    overlay.classList.add('show');
-});
+(function () {
+  const overlay   = document.getElementById('overlay');
+  const closeBtns = overlay.querySelectorAll('.close-overlay');
 
-// Close overlay on button click with smooth fade-out
-closeOverlayBtn.addEventListener('click', () => {
-    document.getElementById("my_audio").play();
-    overlay.classList.remove('show');
-});
+  /* ── Lock scroll: target both html and body to cover all Android browsers ── */
+  function lockScroll() {
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow             = 'hidden';
+  }
 
-// Optionally prevent scrolling when the overlay is shown
-document.body.style.overflow = 'hidden';
-closeOverlayBtn.addEventListener('click', () => {
-    document.body.style.overflow = 'auto';
-});
+  /* ── Unlock scroll: clear both so Android Chrome fully restores scrolling ── */
+  function unlockScroll() {
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow             = '';
+  }
 
+  function openOverlay() {
+    lockScroll();
+    overlay.classList.remove('is-hidden');
+  }
 
-  (function(){
-    const overlay = document.getElementById('overlay');
-    const openOnLoad = true;            // set false if you don’t want it to auto-show
-    const closeBtns = overlay.querySelectorAll('.close-overlay');
-
-    function openOverlay(){
-      document.documentElement.style.overflow = 'hidden'; // prevent background scroll
-      overlay.classList.remove('is-hidden');
+  function closeOverlay() {
+    overlay.classList.add('is-hidden');
+    unlockScroll();
+    // Play audio when the invitation is opened
+    var audio = document.getElementById('my_audio');
+    if (audio) {
+      audio.play().catch(function () {
+        // Autoplay may be blocked; ignore silently
+      });
     }
-    function closeOverlay(){
-      overlay.classList.add('is-hidden');
-      document.documentElement.style.overflow = '';
-    }
+  }
 
-    closeBtns.forEach(btn => btn.addEventListener('click', closeOverlay));
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) closeOverlay(); // click outside to close
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeOverlay();
-    });
+  // Close on button click
+  closeBtns.forEach(function (btn) {
+    btn.addEventListener('click', closeOverlay);
+  });
 
-    if (openOnLoad) openOverlay();
-  })();
+  // Close on backdrop click
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) closeOverlay();
+  });
 
+  // Close on Escape key
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeOverlay();
+  });
+
+  // Auto-open on page load
+  window.addEventListener('load', function () {
+    openOverlay();
+  });
+})();

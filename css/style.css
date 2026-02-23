@@ -207,6 +207,25 @@ body {
   z-index: 0;
 }
 
+/* ── Android touch-scroll fix ──────────────────────────────────────────────
+   tsParticles injects a <canvas> inside #sakura-container that is
+   position:fixed and covers the entire viewport. On Android Chrome it
+   intercepts every single-finger touchmove, blocking page scroll.
+   • pointer-events: none  → the container and canvas never capture touches
+   • touch-action: pan-y   → explicitly tells the browser these elements
+     allow vertical panning (belt-and-suspenders for Android WebView)
+   iOS Safari is lenient and ignores this; Android enforces it strictly.
+─────────────────────────────────────────────────────────────────────────── */
+#sakura-container {
+  pointer-events: none !important;
+  touch-action: pan-y !important;
+}
+
+#sakura-container canvas {
+  pointer-events: none !important;
+  touch-action: pan-y !important;
+}
+
 .sakura {
   position: absolute;
   pointer-events: none;

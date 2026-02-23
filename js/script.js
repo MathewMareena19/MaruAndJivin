@@ -2,204 +2,195 @@
  * @author Basil Sajeev <basilsajeevthevarmadam@gmail.com>
  */
 (function ($) {
-    "use strict";
-      tsParticles.load("sakura-container", {
-  particles: {
-    number: {
-      value: 0           // FIX 1: start with 0, let only emitter control spawning
-    },
-    color: {
-      value: ["#256fc485", "#2b77ce96", "#0771ebc7", "#14467e9f"]  
-    },
-    shape: {
-    type: "image",
-    options: {
-        image: {
-        src: "./assets/img/leaf.svg",
-        width: 64,
-        height: 64
+  "use strict";
+
+  // ── Android touch-scroll fix ──────────────────────────────────────────────
+  // tsParticles injects a <canvas> that is position:fixed and covers the full
+  // viewport. On Android Chrome it intercepts every single-finger touchmove,
+  // making the page unscrollable after the overlay closes.
+  // Fix:
+  //   1. Set interactivity.events to all false so the library itself skips
+  //      registering its own touch/pointer listeners on the canvas.
+  //   2. In the .then() callback, force pointer-events:none + touch-action:pan-y
+  //      via inline styles as a belt-and-suspenders guarantee.
+  // iOS Safari is lenient about touch capture; Android enforces it strictly.
+  // ─────────────────────────────────────────────────────────────────────────
+  tsParticles.load("sakura-container", {
+    particles: {
+      number: {
+        value: 0  // start with 0, let only emitter control spawning
+      },
+      color: {
+        value: ["#256fc485", "#2b77ce96", "#0771ebc7", "#14467e9f"]
+      },
+      shape: {
+        type: "image",
+        options: {
+          image: {
+            src: "./assets/img/leaf.svg",
+            width: 64,
+            height: 64
+          }
         }
-    }
-    },
-    opacity: {
-      value: { min: 0.4, max: 0.9 },
-      animation: {
+      },
+      opacity: {
+        value: { min: 0.4, max: 0.9 },
+        animation: {
+          enable: true,
+          speed: 0.5,
+          sync: false
+        }
+      },
+      size: {
+        value: { min: 10, max: 30 }
+      },
+      move: {
         enable: true,
-        speed: 0.5,
-        sync: false
+        speed: 1,
+        direction: "bottom",
+        drift: 0,
+        gravity: { enable: false },
+        outModes: { default: "out" }
+      },
+      wobble: { enable: false },
+      rotate: {
+        value: { min: 0, max: 360 },
+        animation: {
+          enable: true,
+          speed: 2,
+          sync: false
+        }
       }
     },
-    size: {
-      value: { min: 10, max: 30 }
-    },
-    move: {
-        enable: true,
-        speed: 1,          // slow steady speed
-        direction: "bottom",
-        drift: 0,            // remove sideways acceleration
-        gravity: {
-    enable: false
-  },
-  outModes: {
-    default: "out"
-  }
-    },
-    wobble: {
-    enable: false        // remove wobble acceleration effect
-    },
-    rotate: {
-    value: { min: 0, max: 360 },
-    animation: {
-        enable: true,
-        speed: 2,        // very slow rotation
-        sync: false
-    }
-    }
-    },
     tilt: {
-    enable: true,
-    value: { min: 0, max: 30 },
-    animation: {
+      enable: true,
+      value: { min: 0, max: 30 },
+      animation: {
         enable: true,
         speed: 1.5,
         sync: false
-    }
+      }
     },
-  emitters: {
-    position: { x: 50, y: -10 },
-    rate: {
-      quantity: 1,
-      delay: 1.1
+    emitters: {
+      position: { x: 50, y: -10 },
+      rate: {
+        quantity: 1,
+        delay: 1.1
+      }
+    },
+    // Tell tsParticles not to attach any hover/click/touch listeners at all.
+    // This is the primary fix — without this the library registers passive
+    // touchmove handlers on the canvas that eat Android scroll gestures.
+    interactivity: {
+      detectsOn: "window",
+      events: {
+        onClick: { enable: false },
+        onHover: { enable: false },
+        resize:  { enable: true  }
+      }
     }
-  }
-});
+  }).then(function (container) {
+    // Belt-and-suspenders: after the canvas is injected, force these via
+    // inline style so no external CSS specificity war can override them.
+    var canvas = document.querySelector("#sakura-container canvas");
+    if (canvas) {
+      canvas.style.pointerEvents = "none";
+      canvas.style.touchAction   = "pan-y";
+    }
+  });
+
 })(jQuery);
 
 
-$(document).on('click', function(){
-    console.log('playing song');
+$(document).on("click", function () {
+  console.log("playing song");
 });
 
-// Set the date we're counting down to
+// ── Countdown timer ──────────────────────────────────────────────────────────
 var countDownDate = new Date("APR 19, 2026 05:30:00").getTime();
 
-// Update the count down every 1 second
-var x = setInterval(function() {
+var x = setInterval(function () {
+  var now      = new Date().getTime();
+  var distance = countDownDate - now;
 
-    // Get todays date and time
-    var now = new Date().getTime();
-    
-    // Find the distance between now and the count down date
-    var distance = countDownDate - now;
-    
-    // Time calculations for days, hours, minutes and seconds
-    var days = Math.floor(distance / (1000 * 60 * 60 * 24));
-    var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    var seconds = Math.floor((distance % (1000 * 60)) / 1000);
-    
-    // Output the result in an element with id="demo"
-    document.getElementById("time").innerHTML = "<div class='title'><p class=\"time-med\">"+days + " Days " + hours + " Hours " + minutes + " Minutes  </p></div>"
-     
-    // If the count down is over, write some text 
-    if (distance < 0) {
-        clearInterval(x);
-        document.getElementById("time").innerHTML = "Bless the couple for happy life!";
-    }
+  var days    = Math.floor(distance / (1000 * 60 * 60 * 24));
+  var hours   = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+
+  document.getElementById("time").innerHTML =
+    "<div class='title'><p class=\"time-med\">" +
+    days + " Days " + hours + " Hours " + minutes + " Minutes" +
+    "</p></div>";
+
+  if (distance < 0) {
+    clearInterval(x);
+    document.getElementById("time").innerHTML = "Bless the couple for happy life!";
+  }
 }, 1000);
 
-// being a bit cool :p  
-var styles = [
-    'background: linear-gradient(#D33106, #571402)'
-    , 'border: 4px solid #3E0E02'
-    , 'color: white'
-    , 'display: block'
-    , 'text-shadow: 0 2px 0 rgba(0, 0, 0, 0.3)'
-    , 'box-shadow: 0 2px 0 rgba(255, 255, 255, 0.4) inset, 0 5px 3px -5px rgba(0, 0, 0, 0.5), 0 -13px 5px -10px rgba(255, 255, 255, 0.4) inset'
-    , 'line-height: 40px'
-    , 'text-align: center'
-    , 'font-weight: bold'
-    , 'font-size: 32px'
-].join(';');
 
-var styles1 = [
-    'color: #FF6C37'
-    , 'display: block'
-    , 'text-shadow: 0 2px 0 rgba(0, 0, 0, 1)'
-    , 'line-height: 40px'
-    , 'font-weight: bold'
-    , 'font-size: 32px'
-].join(';');
-
-var styles2 = [
-    'color: teal'
-    , 'display: block'
-    , 'text-shadow: 0 2px 0 rgba(0, 0, 0, 1)'
-    , 'line-height: 40px'
-    , 'font-weight: bold'
-    , 'font-size: 32px'
-].join(';');
-
-
-// ─── Unified Overlay Logic ────────────────────────────────────────────────────
-// Root cause of Android scroll bug:
-//   • document.body.style.overflow = 'hidden'  was set globally on page load
-//   • One click handler reset document.body.style.overflow = 'auto'
-//   • But the IIFE only cleared document.documentElement.style.overflow
-//   • Android Chrome enforces body overflow strictly; iOS Safari is more lenient
-// Fix: lock/unlock scroll ONLY on <html> (documentElement) in one unified place.
+// ── Overlay — unified controller ─────────────────────────────────────────────
+// Previous bug: scroll was locked on BOTH html and body by two different code
+// paths, but unlocked only partially on close. Android Chrome strictly enforces
+// overflow:hidden on body; iOS Safari is lenient. Fix: one place locks both,
+// one place unlocks both. No other code touches overflow.
 // ─────────────────────────────────────────────────────────────────────────────
-
 (function () {
-  const overlay   = document.getElementById('overlay');
-  const closeBtns = overlay.querySelectorAll('.close-overlay');
+  var overlay   = document.getElementById("overlay");
+  var closeBtns = overlay.querySelectorAll(".close-overlay");
+  var audio     = document.getElementById("my_audio");
 
-  /* ── Lock scroll: target both html and body to cover all Android browsers ── */
   function lockScroll() {
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow             = 'hidden';
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow            = "hidden";
+    // Also block touchmove on the document so the background can't be
+    // scrolled by a stray finger while the overlay is open.
+    document.addEventListener("touchmove", preventTouch, { passive: false });
   }
 
-  /* ── Unlock scroll: clear both so Android Chrome fully restores scrolling ── */
   function unlockScroll() {
-    document.documentElement.style.overflow = '';
-    document.body.style.overflow             = '';
+    document.documentElement.style.overflow = "";
+    document.body.style.overflow            = "";
+    document.removeEventListener("touchmove", preventTouch);
+  }
+
+  function preventTouch(e) {
+    // Allow scrolling inside the overlay card itself, block everywhere else.
+    if (!overlay.contains(e.target)) {
+      e.preventDefault();
+    }
   }
 
   function openOverlay() {
     lockScroll();
-    overlay.classList.remove('is-hidden');
+    overlay.classList.remove("is-hidden");
   }
 
   function closeOverlay() {
-    overlay.classList.add('is-hidden');
+    overlay.classList.add("is-hidden");
     unlockScroll();
-    // Play audio when the invitation is opened
-    var audio = document.getElementById('my_audio');
     if (audio) {
-      audio.play().catch(function () {
-        // Autoplay may be blocked; ignore silently
-      });
+      audio.play().catch(function () { /* autoplay blocked — ignore */ });
     }
   }
 
-  // Close on button click
+  // Button(s) inside the overlay
   closeBtns.forEach(function (btn) {
-    btn.addEventListener('click', closeOverlay);
+    btn.addEventListener("click", closeOverlay);
   });
 
-  // Close on backdrop click
-  overlay.addEventListener('click', function (e) {
+  // Tap the dark backdrop to close
+  overlay.addEventListener("click", function (e) {
     if (e.target === overlay) closeOverlay();
   });
 
-  // Close on Escape key
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeOverlay();
+  // Escape key
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeOverlay();
   });
 
-  // Auto-open on page load
-  window.addEventListener('load', function () {
+  // Auto-open on load
+  window.addEventListener("load", function () {
     openOverlay();
   });
 })();

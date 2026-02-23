@@ -111,47 +111,45 @@ var x = setInterval(function () {
 //      → FIXED BELOW: one lockScroll(), one unlockScroll(), both elements.
 //
 // ─────────────────────────────────────────────────────────────────────────────
-(function () {
-  var overlay   = document.getElementById("overlay");
-  var closeBtns = overlay.querySelectorAll(".close-overlay");
-  var audio     = document.getElementById("my_audio");
+document.addEventListener("DOMContentLoaded", () => {
+  const overlay = document.getElementById("overlay");
+  const closeBtns = overlay.querySelectorAll(".close-overlay");
+  const audio = document.getElementById("my_audio");
 
+  // ---- scroll lock helpers (ANDROID-SAFE) ----
   function lockScroll() {
+    // lock BOTH html and body to avoid Android half-locked state
     document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow            = "hidden";
+    document.body.style.overflow = "hidden";
   }
 
   function unlockScroll() {
     document.documentElement.style.overflow = "";
-    document.body.style.overflow            = "";
+    document.body.style.overflow = "";
   }
 
   function openOverlay() {
     lockScroll();
-    overlay.classList.remove("is-hidden");
+    overlay.classList.remove("is-hidden"); // visible
   }
 
   function closeOverlay() {
-    overlay.classList.add("is-hidden");
+    overlay.classList.add("is-hidden"); // hidden (pointer-events: none via CSS)
     unlockScroll();
-    if (audio) {
-      audio.play().catch(function () { /* autoplay blocked — ignore */ });
-    }
+
+    // play audio on user gesture (safe)
+    try { audio && audio.play(); } catch (e) {}
   }
 
-  closeBtns.forEach(function (btn) {
-    btn.addEventListener("click", closeOverlay);
-  });
+  // Open on load
+  openOverlay();
 
-  overlay.addEventListener("click", function (e) {
+  // Close actions
+  closeBtns.forEach((btn) => btn.addEventListener("click", closeOverlay));
+  overlay.addEventListener("click", (e) => {
     if (e.target === overlay) closeOverlay();
   });
-
-  document.addEventListener("keydown", function (e) {
+  document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeOverlay();
   });
-
-  window.addEventListener("load", function () {
-    openOverlay();
-  });
-})();
+});
